@@ -12,6 +12,8 @@ use listenfd::ListenFd;
 // use migration::{Migrator, MigratorTrait};
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::time::Duration;
+use actix_rt::time::sleep;
 use tera::Tera;
 
 const DEFAULT_POSTS_PER_PAGE: u64 = 5;
@@ -154,6 +156,25 @@ async fn not_found(data: web::Data<AppState>, request: HttpRequest) -> Result<Ht
     Ok(HttpResponse::Ok().content_type("text/html").body(body))
 }
 
+
+async fn slow_query() -> String {
+    // 模拟慢查询，延迟5秒
+    sleep(Duration::from_secs(5)).await;
+    "Slow query result".to_string()
+}
+
+#[get("/test")]
+async fn handle_post(data: web::Data<AppState>, request: HttpRequest) -> Result<HttpResponse, Error> {
+    // 异步处理慢查询
+    actix_rt::spawn(async move {
+        let result = slow_query().await;
+        println!("Slow query result: {}", result);
+    });
+    // 立即返回响应
+    Ok(HttpResponse::Ok().content_type("text/html").body("ok"))
+}
+
+
 #[actix_web::main]
 async fn start() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "debug");
@@ -198,12 +219,13 @@ async fn start() -> std::io::Result<()> {
 }
 
 fn init(cfg: &mut web::ServiceConfig) {
-    cfg.service(list);
-    cfg.service(new);
-    cfg.service(create);
-    cfg.service(edit);
-    cfg.service(update);
-    cfg.service(delete);
+    // cfg.service(list);
+    // cfg.service(new);
+    // cfg.service(create);
+    // cfg.service(edit);
+    // cfg.service(update);
+    // cfg.service(delete);
+    cfg.service(handle_post);
 }
 
 pub fn main() {
