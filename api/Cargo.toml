@@ -18,3 +18,4 @@ listenfd = "0.5"
 serde = "1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 entity = { path = "../entity" }
+web3 = "0.18.0"
